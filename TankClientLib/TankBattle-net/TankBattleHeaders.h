@@ -34,7 +34,7 @@ namespace tankNet
         HEALTHY
     };
 
-	struct TankBattleCommand
+	struct TankBattleCommand // tells tank on server what to do
 	{
 		TankBattleMessage msg;              // declare message type
 		TankMovementOptions tankMove;       // assign an action for the tank
@@ -44,9 +44,9 @@ namespace tankNet
 		int messageLength = sizeof(TankBattleCommand);
 	};
 
-	struct TankTacticalInfo
+	struct TankTacticalInfo // enemy tank
 	{
-		int playerID;
+		int playerID; 
         int isAlive;
 
 		int inSight;
@@ -59,7 +59,7 @@ namespace tankNet
         TankHealthStatus health;
 	};
 
-	struct TankBattleStateData
+	struct TankBattleStateData // Your tank
 	{
 		int messageLength;
 
@@ -67,7 +67,7 @@ namespace tankNet
 		float currentHealth;
 
 		float position[3];
-		float forward[3];
+		float forward[3]; // your forward
 
 		float cannonForward[3];
 
