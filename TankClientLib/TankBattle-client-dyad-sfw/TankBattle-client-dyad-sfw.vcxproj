@@ -74,11 +74,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)TankBattle-net\;$(SolutionDir)libs\sfw\;$(SolutionDir)libs\dyad\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)AndrewWardMathLibrary\;$(SolutionDir)TankBattle-net\;$(SolutionDir)libs\sfw\;$(SolutionDir)libs\dyad\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>sfw.lib;ws2_32.lib;TankBattle-net.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Mathlib.lib;sfw.lib;ws2_32.lib;TankBattle-net.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\sfw\$(Configuration);$(SolutionDir)$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -102,13 +102,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)TankBattle-net\;$(SolutionDir)libs\sfw\;$(SolutionDir)libs\dyad\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)AndrewWardMathLibrary\;$(SolutionDir)TankBattle-net\;$(SolutionDir)libs\sfw\;$(SolutionDir)libs\dyad\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>sfw.lib;ws2_32.lib;TankBattle-net.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Mathlib.lib;sfw.lib;ws2_32.lib;TankBattle-net.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\sfw\$(Configuration);$(SolutionDir)$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
