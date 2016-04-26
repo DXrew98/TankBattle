@@ -52,7 +52,16 @@ andMath::vec2 andMath::vec2::fromAngle(float angle) {
 
 
 	}
+	andMath::vec2 andMath::vec2::random()
+	{
+		return (vec2{ 1 - 2 * (float)rand() / RAND_MAX,  1 - 2 * (float)rand() / RAND_MAX }).normal();
+	}
 	andMath::vec2 andMath::project	(const vec2 & a, const vec2 & b) { return dot(a, b) * b.normal(); }
+
+	float andMath::distance(const vec2 & a, const vec2 & b)
+	{
+		return (a - b).mag();
+	}
 
 	andMath::vec2 andMath::min		(const vec2 & a, const vec2 & b) { return{ fminf(a.x, b.x), fminf(a.y, b.y) }; }
 	andMath::vec2 andMath::max		(const vec2 & a, const vec2 & b) { return{ fmaxf(a.x, b.x), fmaxf(a.y, b.y) }; }

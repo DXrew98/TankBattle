@@ -4,6 +4,12 @@
 #undef RIGHT
 #undef LEFT
 
+Agent::Agent() {
+	currentDT = 0.0f;
+	randTimer = 0;
+	frameCount = 0;
+}
+
 tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, float deltaTime ) {
 
 
@@ -11,34 +17,54 @@ tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, f
 	dt = deltaTime;
 	prevState = currentState;
 	currentState = *state;
+	
+	commandPrev = commandCurr;
 
-	cannonFwrd = andMath::vec2{ currentState.cannonForward[0], currentState.cannonForward[2] };
-	currentPos = andMath::vec2{ currentState.position[0],	currentState.position[2] };
+	
+	cannonFwrd = andMath::vec2{ currentState.cannonForward[0],	currentState.cannonForward[2] };
+	currentPos = andMath::vec2{ currentState.position[0],		currentState.position[2] };
+	currentFwrd = andMath::vec2{ currentState.forward[0],		currentState.forward[2] };
+	prevPos	   = andMath::vec2{ prevState.position[0],			prevState.position[2] };
+	
+	commandCurr.msg = tankNet::TankBattleMessage::GAME;
+	commandCurr.tankMove = tankNet::TankMovementOptions::HALT;
+	commandCurr.cannonMove = tankNet::CannonMovementOptions::HALT;
 
-		command.msg = tankNet::TankBattleMessage::GAME;
-		command.tankMove = tankNet::TankMovementOptions::HALT;
-		command.cannonMove = tankNet::CannonMovementOptions::HALT;
-
-		switch (turretState) {
+	switch (turretState) {
 		case SCAN: scan(); break;
 		case AIM : aim (); break;
 		case FIRE: fire(); break;
 		}
 
-		switch (bodyState) {
+	switch (bodyState) {
 		case PATROL : patrol (); break;
-		case PRESS  : press  (); break;
-		case RETREAT: retreat(); break;
+		//case PRESS  : press  (); break;
+		//case RETREAT: retreat(); break;
 		}
+	
+	
 
-		return command;
+	if (commandPrev.tankMove == commandCurr.tankMove
+		&& commandCurr.tankMove < tankNet::TankMovementOptions::BACK
+		&& (prevPos - currentPos).mag() < .1f)
+		frameCount++;
+	else frameCount = 0;
+
+	if (frameCount > 24)
+	{
+		needNewPatrolTarget = true;
+		std::cout << "Obstacle Hit" << std::endl;
+	}
+
+
+		return commandCurr;
 	}
 
 	// Turret Functions 
 	void Agent::scan()
 	{ 
-		command.fireWish = false;
-		command.cannonMove = tankNet::CannonMovementOptions::LEFT;
+		commandCurr.fireWish = false;
+		commandCurr.cannonMove = tankNet::CannonMovementOptions::LEFT;
 
 		//iterate through enemies to check if their in view
 		for (int target = 0; target < currentState.playerCount - 1; ++target) {
@@ -46,12 +72,8 @@ tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, f
 				curTarget = andMath::vec2{ currentState.tacticoolData[target].lastKnownPosition[0], currentState.tacticoolData[target].lastKnownPosition[2] };
 
 				targetID = target;
-				//std::cout << andMath::dot(cannonFwrd, andMath::vec2(curTarget - currentPos).normal()) << std::endl;
-				std::cout << "CF:" << cannonFwrd[0] << " " << cannonFwrd[2] << std::endl;
-				std::cout << "CT:" << curTarget[0] << " " << curTarget[2] << std::endl;
-				std::cout << "CP:" << currentPos[0] << " " << currentPos[2] << std::endl;
 				if (andMath::dot(cannonFwrd, andMath::vec2(curTarget - currentPos).normal()) > 0.87f) {
-					turretState = TurretState::FIRE;
+					turretState = TurretState::AIM;
 				}
 				break;
 			}
@@ -60,19 +82,50 @@ tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, f
 
 	void Agent::aim()
 	{
-
-
 		if (!isAiming)
 		{
 			isAiming = true;
 		}
 		else
 		{
-			currentState.tacticoolData[targetID].lastKnownPosition;
+			
 			//prevState.tacticoolData[targetID].lastKnownPosition;
 
-
 			// Evaluate where we want to point
+			//cannonFwrd = andMath::vec2{ currentState.tacticoolData[targetID].lastKnownPosition[0], currentState.tacticoolData[targetID].lastKnownPosition[2] };
+			curTarget = andMath::vec2{ currentState.tacticoolData[targetID].lastKnownPosition[0], currentState.tacticoolData[targetID].lastKnownPosition[2] };
+
+			// get cannon forward vec2
+			// get direction
+
+
+			if (lookTo(andMath::vec2{ currentState.tacticoolData[targetID].lastKnownDirection[0],
+								      currentState.tacticoolData[targetID].lastKnownDirection[2] }))
+			{
+				turretState = TurretState::FIRE;
+				isAiming = false;
+			}
+
+			if (!currentState.tacticoolData[targetID].inSight)
+			{
+				turretState = TurretState::SCAN;
+				isAiming = false;
+				needNewPatrolTarget = true;
+			}
+
+			//andMath::vec2 cannonRight = -cannonFwrd.perp();
+			//if (dot(cannonFwrd, curTarget) < 0.98f) {
+			//	if (dot(cannonRight, curTarget) >= 0.0f) {
+			//		commandCurr.cannonMove = tankNet::CannonMovementOptions::RIGHT;
+			//	}
+			//	else {
+			//		commandCurr.cannonMove = tankNet::CannonMovementOptions::LEFT;
+			//	}
+			//}
+			//else {
+			//	turretState = TurretState::FIRE;
+			//}
+
 			// Determine direction to the target (target - current.position)
 			// May take into account the displacement or velocity of the target
 			// target displacement : current.pos - previous.position
@@ -83,28 +136,83 @@ tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, f
 
 	void Agent::fire()
 	{
-		command.fireWish = true;
-		/*todo rotate turret in chosen direction*/
-		command.fireWish = true;
-		//todo rotate turret in chosen direction
-		command.fireWish = true;
-		turretState = TurretState::SCAN;
+		commandCurr.fireWish = true;
+		turretState = TurretState::AIM;
+
 	}
+
+
+	void Agent::moveTo(const andMath::vec2 &position)
+	{
+		vec2 desired = (position - currentPos).normal();
+		
+		if (andMath::dot(currentFwrd, desired.perp()) > 0)
+			commandCurr.tankMove = tankNet::TankMovementOptions::RIGHT;
+
+		if (andMath::dot(currentFwrd, desired.perp()) < 0)
+			commandCurr.tankMove = tankNet::TankMovementOptions::LEFT;
+
+		if (andMath::dot(desired, currentFwrd) > .87f) // 60 degree flex-range
+			commandCurr.tankMove = tankNet::TankMovementOptions::FWRD;
+		
+		if (andMath::dot(desired, currentFwrd) < -.87f)
+			commandCurr.tankMove = tankNet::TankMovementOptions::BACK;
+		
+	}
+	bool Agent::lookTo(const andMath::vec2 &direction, float tolerance)
+	{	
+		if (andMath::dot(cannonFwrd, direction.perp()) > 0)
+			commandCurr.cannonMove = tankNet::CannonMovementOptions::RIGHT;
+
+		if (andMath::dot(cannonFwrd, direction.perp()) < 0)
+			commandCurr.cannonMove = tankNet::CannonMovementOptions::LEFT;
+
+		return andMath::dot(cannonFwrd, direction) > tolerance;
+
+	}
+
 
 	//Tank Drive Fuctions 
 	void Agent::patrol()
 	{
-		//myPos
-		//way I am facing
+		if (andMath::distance(curTarget, currentPos) <= 20)
+			needNewPatrolTarget = true;
+				
+		if(needNewPatrolTarget)
+		{
+			needNewPatrolTarget = false;
+			curTarget = andMath::vec2::random() * vec2 { 50, 50 };
+		}
 
+		moveTo(curTarget);
+		/*
+		andMath::vec2 targetFrwd = andMath::vec2(curTarget - currentPos).normal();
+
+		if (andMath::dot(currentFwrd, andMath::vec2(curTarget - currentPos).normal()) > 0.87f) {
+			commandCurr.tankMove = tankNet::TankMovementOptions::FWRD;
+		}
+		else {
+			commandCurr.tankMove = tankNet::TankMovementOptions::LEFT;
+		}
+
+		if (andMath::dot(currentFwrd, curTarget) > 0.87f) {
+			bodyState = BodyState::PRESS;
+		}*/
 	}
 
 	void Agent::press()
 	{
-
+		commandCurr.tankMove = tankNet::TankMovementOptions::FWRD;
 	}
 
 	void Agent::retreat()
 	{
-		
+		currentDT += dt;
+		commandCurr.tankMove = tankNet::TankMovementOptions::BACK;
+		std::cout << "dt: " << dt << " curr: " << currentDT << std::endl;
+		if (currentDT > 4) {
+				commandCurr.tankMove = tankNet::TankMovementOptions::HALT;
+				bodyState = BodyState::PATROL;
+				currentDT = 0.0f;
+		}
 	}
