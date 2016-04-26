@@ -3,7 +3,11 @@
 
 #include "TankBattleNet.h"
 #include "sfwdraw.h"
+
+#include "Agent.h"
 #undef NONE     // sfw defines NONE as one of its colors; we won't be needing that
+#undef RIGHT
+#undef LEFT
 
 using std::stringstream;
 
@@ -76,6 +80,9 @@ int main(int argc, char** argv)
     {
         auto serverData = tankNet::recieve();
 
+		Agent agent;
+		bool userControled = false;
+
         // initialize SFW and assets
         sfw::initContext(WINDOW_WIDTH, WINDOW_HEIGHT, "TankController");
         unsigned font = sfw::loadTextureMap("./res/fontmap.png", 16, 16);
@@ -120,7 +127,11 @@ int main(int argc, char** argv)
             ex.cannonMove = tankNet::CannonMovementOptions::HALT;
 
             // poll for input
-            if (inputPressed())
+			if (userControled == false) {
+				ex = agent.update(state, sfw::getDeltaTime());
+			}
+
+            if (inputPressed() && userControled == true)
             {
                 // tank actions
                 ex.tankMove = sfw::getKey(TANK_FWRD) ? tankNet::TankMovementOptions::FWRD :
@@ -134,6 +145,8 @@ int main(int argc, char** argv)
                     tankNet::CannonMovementOptions::HALT;
 
                 ex.fireWish = sfw::getKey(TANK_FIRE);
+
+			
 
                 // game actions
                 if (sfw::getKey(GAME_QUIT))

@@ -1,18 +1,28 @@
 #pragma once
 #include "TankBattleHeaders.h"
+#include "VMMath.h"
 
 class Agent {
 public:
-	enum TurretState {SCAN, AIM, FIRE};
-	enum BodyState	 {PATROL, PRESS, RETREAT};
+	enum TurretState {SCAN, AIM, FIRE} turretState = SCAN;
+	enum BodyState	 {PATROL, PRESS, RETREAT} bodyState = PATROL;
 	
-	TurretState turretState;
-	BodyState bodyState;
+	//tankNet::TankBattleStateData current, previous;
+	tankNet::TankBattleCommand command;
 
-	tankNet::TankBattleStateData *Self;
-	tankNet::TankBattleCommand Command;
+	tankNet::TankBattleCommand update(tankNet::TankBattleStateData * state, float deltaTime);
 
-	tankNet::TankBattleCommand update();
+	andMath::vec2 cannonFwrd;
+	andMath::vec2 currentPos;
+	andMath::vec2 curTarget;
+	unsigned targetID;
+
+	float dt;
+
+	tankNet::TankBattleStateData currentState;
+	tankNet::TankBattleStateData prevState;
+
+	bool isAiming;
 
 	// turret state functions
 	void scan();
