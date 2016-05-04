@@ -46,20 +46,40 @@ tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, f
 
 	if (commandPrev.tankMove == commandCurr.tankMove
 		&& commandCurr.tankMove < tankNet::TankMovementOptions::BACK
-		&& (prevPos - currentPos).mag() < .1f)
+		&& (prevPos - currentPos).mag() < .2f)
 		frameCount++;
 	else frameCount = 0;
 
-	if (frameCount > 24)
+	//std::cout << frameCount << std::endl;
+	if (frameCount > 12)
 	{
-		needNewPatrolTarget = true;
+		curTarget = (prevPos - currentPos).normal() * 10;
+		
 		std::cout << "Obstacle Hit" << std::endl;
 	}
 
+	if (frameCount > 48)
+		needNewPatrolTarget = true;
 
-		return commandCurr;
+
+
+	if (commandPrev.tankMove == commandCurr.tankMove
+		&& commandCurr.tankMove < tankNet::TankMovementOptions::BACK
+		&& (prevPos - currentPos).mag() < .5f)
+		emFrameCount++;
+	else emFrameCount = 0;
+
+	if (emFrameCount > 256)
+	{
+		needNewPatrolTarget = true;
 	}
 
+
+
+	return commandCurr;
+}
+
+	
 	// Turret Functions 
 	void Agent::scan()
 	{ 
@@ -138,38 +158,10 @@ tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, f
 	{
 		commandCurr.fireWish = true;
 		turretState = TurretState::AIM;
-
 	}
 
 
-	void Agent::moveTo(const andMath::vec2 &position)
-	{
-		vec2 desired = (position - currentPos).normal();
-		
-		if (andMath::dot(currentFwrd, desired.perp()) > 0)
-			commandCurr.tankMove = tankNet::TankMovementOptions::RIGHT;
-
-		if (andMath::dot(currentFwrd, desired.perp()) < 0)
-			commandCurr.tankMove = tankNet::TankMovementOptions::LEFT;
-
-		if (andMath::dot(desired, currentFwrd) > .87f) // 60 degree flex-range
-			commandCurr.tankMove = tankNet::TankMovementOptions::FWRD;
-		
-		if (andMath::dot(desired, currentFwrd) < -.87f)
-			commandCurr.tankMove = tankNet::TankMovementOptions::BACK;
-		
-	}
-	bool Agent::lookTo(const andMath::vec2 &direction, float tolerance)
-	{	
-		if (andMath::dot(cannonFwrd, direction.perp()) > 0)
-			commandCurr.cannonMove = tankNet::CannonMovementOptions::RIGHT;
-
-		if (andMath::dot(cannonFwrd, direction.perp()) < 0)
-			commandCurr.cannonMove = tankNet::CannonMovementOptions::LEFT;
-
-		return andMath::dot(cannonFwrd, direction) > tolerance;
-
-	}
+	
 
 
 	//Tank Drive Fuctions 
@@ -183,36 +175,65 @@ tankNet::TankBattleCommand Agent::update(tankNet::TankBattleStateData * state, f
 			needNewPatrolTarget = false;
 			curTarget = andMath::vec2::random() * vec2 { 50, 50 };
 		}
-
+		
 		moveTo(curTarget);
-		/*
-		andMath::vec2 targetFrwd = andMath::vec2(curTarget - currentPos).normal();
 
-		if (andMath::dot(currentFwrd, andMath::vec2(curTarget - currentPos).normal()) > 0.87f) {
-			commandCurr.tankMove = tankNet::TankMovementOptions::FWRD;
-		}
-		else {
-			commandCurr.tankMove = tankNet::TankMovementOptions::LEFT;
-		}
-
-		if (andMath::dot(currentFwrd, curTarget) > 0.87f) {
+		if (isAiming == false) {
+			curTarget = andMath::vec2{ currentState.tacticoolData[targetID].lastKnownPosition[0], currentState.tacticoolData[targetID].lastKnownPosition[2] };
 			bodyState = BodyState::PRESS;
-		}*/
+		}
 	}
 
 	void Agent::press()
-	{
-		commandCurr.tankMove = tankNet::TankMovementOptions::FWRD;
+	{ 
+		moveTo(curTarget);
+		if (!currentState.tacticoolData[targetID].inSight) {
+			bodyState = BodyState::PATROL;
+		}
 	}
 
 	void Agent::retreat()
 	{
 		currentDT += dt;
 		commandCurr.tankMove = tankNet::TankMovementOptions::BACK;
-		std::cout << "dt: " << dt << " curr: " << currentDT << std::endl;
 		if (currentDT > 4) {
 				commandCurr.tankMove = tankNet::TankMovementOptions::HALT;
 				bodyState = BodyState::PATROL;
 				currentDT = 0.0f;
 		}
 	}
+
+	bool Agent::isInGoo()
+	{
+		return false;
+	}
+
+	void Agent::moveTo(const andMath::vec2 &position)
+	{
+		vec2 desired = (position - currentPos).normal();
+
+		if (andMath::dot(currentFwrd, desired.perp()) > 0)
+			commandCurr.tankMove = tankNet::TankMovementOptions::RIGHT;
+
+		if (andMath::dot(currentFwrd, desired.perp()) < 0)
+			commandCurr.tankMove = tankNet::TankMovementOptions::LEFT;
+
+		if (andMath::dot(desired, currentFwrd) > .87f) // 60 degree flex-range
+			commandCurr.tankMove = tankNet::TankMovementOptions::FWRD;
+
+		if (andMath::dot(desired, currentFwrd) < -.87f)
+			commandCurr.tankMove = tankNet::TankMovementOptions::BACK;
+
+	}
+	bool Agent::lookTo(const andMath::vec2 &direction, float tolerance)
+	{
+		if (andMath::dot(cannonFwrd, direction.perp()) > 0)
+			commandCurr.cannonMove = tankNet::CannonMovementOptions::RIGHT;
+
+		if (andMath::dot(cannonFwrd, direction.perp()) < 0)
+			commandCurr.cannonMove = tankNet::CannonMovementOptions::LEFT;
+
+		return andMath::dot(cannonFwrd, direction) > tolerance;
+
+	}
+

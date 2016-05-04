@@ -34,7 +34,9 @@ public:
 
 	float randTimer;
 	bool isAiming;
+	bool fireing;
 	int frameCount;
+	int emFrameCount;
 
 	// turret state functions
 	void scan();
@@ -46,6 +48,24 @@ public:
 	void press();
 	void retreat();
 
+	// 
+	bool isInGoo();
+	bool isBumpingObject();
+	bool isStuck();
+
 	void moveTo(const andMath::vec2 &position);
 	bool lookTo(const andMath::vec2 &direction, float tolerance = .97f);
 };
+
+
+/*
+	Isolating tests for bumping things
+		Goo?			-> Back Track
+		Walls?			-> Find new Target
+		Tight Geometry?	-> find New Target
+
+
+	Improved aiming:
+		Take velocities into account
+
+*/
